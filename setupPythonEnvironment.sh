@@ -16,7 +16,7 @@ install_python_dependencies() {
   export PS1
   
   . "$PYENV_DIRECTORY/bin/activate"
-  pip install faker humanfriendly
+  pip install faker humanfriendly progressbar2
   deactivate
 }
 

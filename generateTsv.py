@@ -8,6 +8,7 @@ import humanfriendly
 import itertools
 import random
 import sys
+import progressbar
 
 def write_row(file, fields):
     row = '\t'.join([f.replace('\t', ' ') for f in fields]) + '\n'
@@ -43,6 +44,22 @@ def generate_data(file, rows, size, seed):
     choices, weights = zip(*weightedLocales)
     cumdist = list(itertools.accumulate(weights))
     
+    if rows is not None:
+        barMaxValue = rows;
+    elif size is not None:
+        barMaxValue = size;
+    else:
+        raise Exception('Require either rows or size to be not None')
+    
+    widgets = [
+        ' ', progressbar.AnimatedMarker(markers='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'),
+        ' ', progressbar.Bar(marker='▰', left='', right='', fill='▱'),
+        ' ', progressbar.Percentage(),
+        ' ', progressbar.ETA()
+    ]
+    pbar = progressbar.ProgressBar(widgets=widgets, max_value=barMaxValue)
+    
+    
     totalBytes = write_row(file, header)
     
     rowId = 1
@@ -65,8 +82,16 @@ def generate_data(file, rows, size, seed):
         
         totalBytes += write_row(file, fields)
         
+        if rows is not None:
+            pbar.update(rowId)
+        elif size is not None:
+            # we will overshot the max by a few bytes
+            # progressbar does not like that
+            pbar.update(min(totalBytes, barMaxValue))
+        
         rowId += 1
     
+    pbar.finish()
     file.close()
     
     print("Generated {} rows using {} ({} bytes)".format(rowId, humanfriendly.format_size(totalBytes), totalBytes))
